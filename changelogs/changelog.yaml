@@ -1,0 +1,70 @@
+ancestor: null
+releases:
+  1.0.0:
+    changes:
+      release_summary: Releasing v1.0.0 of the Ansible network.base collection that
+        enables ansible network validated content to gather, persist, deploy facts.
+    fragments:
+    - add_resource_manager_role.yaml
+    - release_1.0.0.yaml
+    - update_sanity_jobs.yaml
+    release_date: '2022-11-02'
+  1.1.0:
+    changes:
+      minor_changes:
+      - fix linting issues and remove integrated health checks.
+    fragments:
+    - ansible_lint_run_fixes.yaml
+    release_date: '2022-11-03'
+  1.2.0:
+    changes:
+      release_summary: Re-releasing v1.1.0 with updated version tag and fixed URLs
+        for issues and repository in galaxy.yml.
+    fragments:
+    - prep_1.2.0.yaml
+    release_date: '2022-11-09'
+  1.2.1:
+    changes:
+      bugfixes:
+      - fix runtime dynamic network os resource module invokation.
+    fragments:
+    - fix_platform_dynamic_invoke.yaml
+    release_date: '2022-12-02'
+  2.0.0:
+    changes:
+      bugfixes:
+      - Fix issue in Detect action.
+      - Fix state of detect and remediate operation when overridden is not supported
+        by any RMs.
+      doc_changes:
+      - Fix docs issues in README.
+      - Update collection installation section.
+      - Update instllation dcumentations and workflow.
+      major_changes:
+      - Create inventory based on hostname
+      minor_changes:
+      - Add feature which support detect and remediate actions.
+      - provide collection prefix with resource name.
+    fragments:
+    - feature_detect_restore.yaml
+    - fix_detect.yaml
+    - fix_detect_state.yaml
+    - fix_detect_when_redirect.yaml
+    - fix_docs.yaml
+    - host_based_vars.yaml
+    - update_base_docs.yaml
+    - update_readme.yaml
+    release_date: '2023-02-23'
+  2.1.0:
+    release_date: '2023-04-18'
+  3.0.0:
+    changes:
+      bugfixes:
+      - provide correct loop var name when running gather task.
+      doc_changes:
+      - Update README.md with data_store structure changes and scm enablement.
+    fragments:
+    - fix_gather_loop.yaml
+    - update_conditions.yaml
+    - update_readme.yaml
+    release_date: '2023-05-11'

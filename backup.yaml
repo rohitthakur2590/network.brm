@@ -1,0 +1,18 @@
+---
+- hosts: rtr1
+  gather_facts: true
+  tasks:
+    - name: Network Backup and Resource Manager
+      ansible.builtin.include_role:
+        name: network.brm.run
+      vars:
+        operation: backup
+        data_store:
+          # local: "./network_local_backup/network"
+          scm:  
+            origin:
+              url: https://github.com/rohitthakur2590/network_backups.git
+              token: "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"
+              user:
+                name: rohitthakur2590
+                email: rohitthakur2590@outlook.com
