@@ -1,277 +1,117 @@
 
-# Ansible Network Resource Manager.
+# Ansible Network Backup And Restore Manager.
 [![CI](https://zuul-ci.org/gated.svg)](https://dashboard.zuul.ansible.com/t/ansible/builds?project=ansible-collections%2Fansible.network) <!--[![Codecov](https://img.shields.io/codecov/c/github/ansible-collections/ansible.network)](https://codecov.io/gh/ansible-collections/ansible.network)-->
 
-This role provides a single platform-agnostic entry point to manage all the resources supported for a given network OS.
+This role provides a single platform-agnostic entry management for backups and restore specific use cases.
 
-## Using the platform-agnostic role network.base.resource_manager as part of a network.base collection.
+## Using the platform-agnostic role network.brm.run as part of a network.brm collection.
 
 **Capabilities**
 ```
-- Use persist operation to fetch the facts and save into inventory host vars files.
-- Use depoy operation to push the saved inventory host vars on to the network appliance.
-- Use gather operation to gather the facts of supported resource modules for a given network OS.
-- Use detect operation to find the config differences between running config and provided config.
-- Use remediate operation to override running config with provided config if there is any difference.
-- Use list operation to get the list of resource modules supported for a given network OS.
-- Use configure operation to perform a single operation (for example, merged) for a given network OS.
+`Differential backup`:
+- This enables user to backup configuration only when there has been some change since last time we did a backup.
+- User can use this operation to get differential backup and save the backed-up files to either local data-store or to GitHub repository
+- User can also push backup files on to the GitHub with tags.
+
+`Full Backup`:
+- This enables user to running-configuration from device and save the backup to local or remote data-store
+- User can also push backup files on to the GitHub with tags.
+
+- `Differential Restore`:
+- Detect the diff and restore network configurations read from local data store or GitHub repository if any diff found.
+
+`Full Restore`:
+- Restore network configurations read from local data store or GitHub Repository.
+
 ```
 # Examples
 
-## Using persist operation
+## Using Differemtial  Backup operation
 
-#### fetch resource facts and build local inventory host_vars.
+#### fetch running config and saves the backup to local data-store.
 ```yaml
 run.yml
 ---
 - hosts: rtr1
   gather_facts: true
   tasks:
-  - name: Network Resource Manager
-    ansible.builtin.include_role:
-      name: network.base.resource_manager
-    vars:
-      operation: persist
-      ansible_network_os: cisco.ios.ios
-      resources:
-        - 'interfaces'
-        - 'l2_interfaces'
-        - 'l3_interfaces'
-        - 'bgp_global'
-        - 'bgp_address_family'
-        - 'ospfv2'
-        - 'ospf_interfaces'
-        - 'ospfv3
-      data_store:
-        local: "~/backup/network"
-```
-
-#### fetch all network resource facts and publish inventory host_vars to a remote repository.
-```yaml
-run.yml
----
-- hosts: rtr1
-  gather_facts: true
-  tasks:
-  - name: Network Resource Manager
-    ansible.builtin.include_role:
-      name: network.base.resource_manager
-    vars:
-      operation: persist
-      ansible_network_os: cisco.ios.ios
-      data_store:
-        scm:
-          origin:
-            url: https://github.com/rohitthakur2590/network_validated_content_automation.git
-            token: "{{ GH_PAT }}"
-            user:
-              name: ansiblegithub
-              email: ansible@ansible.com
-```
-
-## Using deploy operation
-#### Read all host_vars from a persisted local inventory and deploy changes to running-config.
-```yaml
-run.yml
----
-- hosts: rtr1
-  gather_facts: true
-  tasks:
-  - name: Network Resource Manager
-    ansible.builtin.include_role:
-      name: network.base.resource_manager
-    vars:
-      operation: deploy
-      ansible_network_os: cisco.ios.ios
-      resources:
-        - 'interfaces'
-        - 'l2_interfaces'
-      data_store:
-        local: "~/backup/network"
-```
-
-#### Read provided resources host vars from a remote repository and deploy changes to running-config.
-```yaml
-run.yml
----
-- hosts: rtr1
-  gather_facts: true
-  tasks:
-  - name: Network Resource Manager
-    ansible.builtin.include_role:
-      name: network.base.resource_manager
-    vars:
-      operation: deploy
-      ansible_network_os: cisco.ios.ios
-      resources:
-        - 'interfaces'
-        - 'l2_interfaces'
-      data_store:
-        scm:
-          origin:
-            url: https://github.com/rohitthakur2590/network_validated_content_automation.git
-            token: "{{ GH_PAT }}"
-            user:
-              name: githubusername
-              email: youremail@example.com
-```
-
-## Using gather operation
-#### Fetch facts for provided network resources.
-
-```yaml
-run.yml
----
-- hosts: rtr1
-  gather_facts: true
-  tasks:
-  - name: Network Resource Manager
-    ansible.builtin.include_role:
-      name: network.base.resource_manager
-    vars:
-      ansible_network_os: cisco.ios.ios
-      operation: gather
-      resources:
-        - 'bgp_global'
-        - 'bgp_address_family'
-```
-
-## Using detect operation
-#### Detect configuration drift between local host vars and running-config. In this operation 'overridden' state is used with 'check_mode=True'
-
-```yaml
-run.yml
----
-- hosts: rtr1
-  gather_facts: true
-  tasks:
-  - name: Network Resource Manager
-    ansible.builtin.include_role:
-      name: network.base.resource_manager
-    vars:
-      operation: detect
-      ansible_network_os: cisco.ios.ios
-      resources:
-        - 'interfaces'
-        - 'l2_interfaces'
-        - 'l3_interfaces'
-      data_store:
-        local: "~/backup/network"
-```
-
-#### Detect configuration drift between remote host-vars repository and running-config. In this operation 'overridden' state is used with 'check_mode=True'
-
-```yaml
-run.yml
----
-- hosts: rtr1
-  gather_facts: true
-  tasks:
-  - name: Network Resource Manager
-    ansible.builtin.include_role:
-      name: network.base.resource_manager
-    vars:
-      operation: detect
-      ansible_network_os: cisco.ios.ios
-      data_store:
-        scm:
-          origin:
-            url: https://github.com/rohitthakur2590/network_validated_content_automation.git
-            token: "{{ GH_PAT }}"
-            user:
-              name: githubusername
-              email: youremail@example.com
-```
-
-## Using remediate task
-#### Remediate configuration drift between local inventory host vars and running config for given network resources.
-##### [CAUTION !] This operation will override the running-config
-```yaml
-run.yml
----
-- hosts: rtr1
-  gather_facts: true
-  tasks:
-  - name: Network Resource Manager
+    - name: Network Backup and Resource Manager
       ansible.builtin.include_role:
-        name: network.base.resource_manager
+        name: network.brm.run
       vars:
-        operation: remediate
-        ansible_network_os: cisco.ios.ios
-        resources:
-          - 'interfaces'
-          - 'l2_interfaces'
+        operation: backup
         data_store:
-          local: "~/backup/network"
+          local: "./network_local_backup/network"
 ```
-#### Remediate configuration drift between remote inventory host vars and running config for given network resources.
-##### [CAUTION !] This operation will override the running-config
+
+#### fetch running config and publish the backup to a remote repository.
 ```yaml
 run.yml
 ---
 - hosts: rtr1
   gather_facts: true
   tasks:
-  - name: Network Resource Manager
+    - name: Network Backup and Resource Manager
       ansible.builtin.include_role:
-        name: network.base.resource_manager
+        name: network.brm.run
       vars:
-        operation: remediate
-        ansible_network_os: cisco.ios.ios
-        resources:
-          - 'interfaces'
-          - 'l2_interfaces'
+        operation: backup
         data_store:
-          scm:
+          scm:  
             origin:
-              url: https://github.com/rohitthakur2590/network_validated_content_automation.git
-              token: "{{ GH_PAT }}"
+              url: "{{ GIT_REPO }}"
+              token: "{{ GH_ACCESS_TOKEN }}"
               user:
-                name: githubusername
-                email: youremail@example.com
-```
-## Using list operation
-#### Get the list of supported resource modules for given ansible_network_os
-```yaml
-run.yml
----
-- hosts: rtr1
-  gather_facts: false
-  tasks:
-  - name: Network Resource Manager
-    ansible.builtin.include_role:
-      name: network.base.resource_manager
-    vars:
-      operation: list
-      ansible_network_os: cisco.ios.ios
+                name: "{{ username }}"
+                email: "{{ email }}"
 ```
 
-## Using config task
-#### Invoke single operation for the provided resource with provided configuration and state for given ansible_network_os
+## Using Restore Operation
+
+#### Restore the config backed up in local data store by overriding existing config.
 ```yaml
 run.yml
 ---
 - hosts: rtr1
   gather_facts: true
   tasks:
-  - name: Network Resource Manager
-    ansible.builtin.include_role:
-      name: network.base.resource_manager
-    vars:
-      operation: configure
-      ansible_network_os: cisco.ios.ios
-      resource: interfaces
-      config:
-        - name: "GigabitEthernet0/0"
-          description: "Edited with Configure operation"
-      state: merged
+    - name: Network Backup and Resource Manager
+      ansible.builtin.include_role:
+        name: network.brm.run
+      vars:
+        operation: restore
+        data_store:
+          local: "./network_local_backup/network"
 ```
+
+#### Restore the config backed up in GitHub repository only if diff exists.
+```yaml
+run.yml
+---
+- hosts: rtr1
+  gather_facts: true
+  tasks:
+    - name: Network Backup and Resource Manager
+      ansible.builtin.include_role:
+        name: network.brm.run
+      vars:
+        operation: restore
+        data_store:
+          scm:  
+            origin:
+              url: "{{ GIT_REPO }}"
+              token: "{{ GH_ACCESS_TOKEN }}"
+              user:
+                name: "{{ username }}"
+                email: "{{ email }}"
+```
+
 ### See Also:
 
 * [Ansible Using roles](https://docs.ansible.com/ansible/2.9/user_guide/playbooks_reuse_roles.html) for more details.
 
 ## Advantages of Using this Role
-Provide a single platform agnostics entry point to manage all the resources supported for the given network os.
+Provide a single platform agnostics entry point to manage network backup and restore use cases.
 
 ### Code of Conduct
 This collection follows the Ansible project's
